@@ -1,5 +1,5 @@
 # Use a lightweight Node.js image
-FROM node:19.16.0-alpine3.13
+FROM node:14.16.0-alpine3.13
 
 # Create app user and group
 RUN addgroup -S app && adduser -S app -G app
@@ -15,6 +15,7 @@ RUN npm install
 COPY . .
 
 # Change to non-root user
+RUN chown -R app:app /app
 USER app
 
 # Expose app port (React default is 3000)
