@@ -11,6 +11,15 @@ services:
     depends_on:
       - api
 
+  web-tests:
+    image: full-stack-js-app-web  # ⚠️ This refers to an existing built image
+    working_dir: /app               # Optional: set working directory
+    command: ["npm", "test"]        # ✅ Specify how the tests should run
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - web  
+
   api:
     build: ./backend
     ports:
@@ -20,6 +29,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+    command: ./docker-entrypoint.sh
     depends_on:
       - db
 
