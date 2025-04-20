@@ -5,6 +5,9 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"  # Maps host:container ports
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - api
 
@@ -14,6 +17,9 @@ services:
       - "3001:3001"
     environment:
       DB_URL: mongodb://db/vidly
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
       - db
 
