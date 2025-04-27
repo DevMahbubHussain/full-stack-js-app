@@ -1,0 +1,110 @@
+version: '3.9'
+
+services:
+  web:
+
+    build: 
+      context: ./frontend
+      target: development
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+    healthcheck:
+      test: ["CMD", "curl","-f","http://localhost:3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    depends_on:
+      api:
+        codition: services_health
+  
+  api:
+
+    build:
+      context: ./backend
+      target: development
+
+    ports:
+      - "3001:3001"
+
+    environment:
+      - DB_URL=mongodb://db/vidly
+      - NODE_ENV=development
+
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+    command: ./docker-entrypoint.sh
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    depends_on:
+      db:
+        codition: services_health
+
+  web-tests:
+    image: full-stack-js-app-web
+    working_dir: /app
+    command: ["npm", "test"]
+    volumes:
+      - ./frontend:/app
+    environment:
+      - CI=true
+    depends_on:
+      web:
+        condition: service_started
+  
+  db:
+
+    image: mongo:4.0-xenial    
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongodb_data:/data/db     
+
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  reverse-proxy:
+
+    image: nginx:alpine
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./ssl/certs:/etc/ssl/certs
+    
+    depends_on:
+      - web
+      - api
+
+
+volumes:
+  mongodb_data:
+      driver: local
